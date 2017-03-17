@@ -13,12 +13,22 @@ var vm = require('vm');
 vm.runInThisContext(fs.readFileSync(__dirname + "/key.js")); // on importe les variables keyApi, secretApi et myNumber de key.js
 
 
-
 const Nexmo = require('nexmo');
 const nexmo = new Nexmo({
   apiKey: keyApi,
   apiSecret: secretApi,
 }, {debug: true});
+
+const socketio = require('socket.io');
+const io = socketio(server);
+io.on('connection', (socket) => {
+  console.log('Connected');
+  socket.on('disconnect', () => {
+    console.log('Disconnected');
+  });
+});
+
+
 
 app.set('views', __dirname + '/../views');
 app.set('view engine', 'html');
@@ -47,6 +57,8 @@ app.post('/', (req, res) => {
         } else {
           console.dir(responseData);
           // Optional: add socket.io -- will explain later
+          let data = {id: responseData.messages[0]['message-id'], number: responseData.messages[0]['to']};
+          io.emit('smsStatus', data);
         }
       }
     );
